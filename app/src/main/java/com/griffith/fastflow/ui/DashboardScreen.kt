@@ -9,6 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.griffith.fastflow.SessionDetailActivity
 import kotlinx.coroutines.delay
 
 @Composable
@@ -25,7 +26,7 @@ fun DashboardScreen(
     // Stores how many seconds have passed since the fast started
     var elapsedSeconds by remember { mutableStateOf(0L) }
 
-    // Needed to launch the share intent
+    // Needed to launch intents
     val context = LocalContext.current
 
     // Updates the timer every second while fasting is active
@@ -106,6 +107,20 @@ fun DashboardScreen(
             }
         ) {
             Text("Share Progress")
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // View Session Details button (Explicit Intent)
+        OutlinedButton(
+            onClick = {
+                val intent = Intent(context, SessionDetailActivity::class.java).apply {
+                    putExtra("formattedTime", formattedTime)
+                }
+                context.startActivity(intent)
+            }
+        ) {
+            Text("View Session Details")
         }
 
         Spacer(modifier = Modifier.height(24.dp))
