@@ -15,7 +15,8 @@ import kotlinx.coroutines.delay
 @Composable
 fun DashboardScreen(
     onNavigateToHistory: () -> Unit,
-    onNavigateToSettings: () -> Unit
+    onNavigateToSettings: () -> Unit,
+    onSessionCompleted: (Long) -> Unit   // New callback that receives the completed duration
 ) {
     // Tracks whether a fast is currently active
     var isFasting by remember { mutableStateOf(false) }
@@ -77,11 +78,14 @@ fun DashboardScreen(
         Button(
             onClick = {
                 if (!isFasting) {
+                    // Start the fast
                     startTime = System.currentTimeMillis()
                     elapsedSeconds = 0L
                     isFasting = true
                 } else {
+                    // Stop the fast
                     elapsedSeconds = (System.currentTimeMillis() - startTime) / 1000
+                    onSessionCompleted(elapsedSeconds)   // Report the completed duration
                     isFasting = false
                 }
             }

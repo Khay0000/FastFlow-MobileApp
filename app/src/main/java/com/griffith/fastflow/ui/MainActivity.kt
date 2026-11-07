@@ -1,22 +1,23 @@
-package com.griffith.fastflow.ui
+package com.griffith.fastflow
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.griffith.fastflow.ui.DashboardScreen
+import com.griffith.fastflow.ui.HistoryScreen
+import com.griffith.fastflow.ui.SettingsScreen
 import com.griffith.fastflow.ui.theme.FastFlowTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        // This is where we start drawing the UI
         setContent {
-            FastFlowTheme {          // Applies the app theme
-                FastFlowApp()        // Our main navigation setup
+            FastFlowTheme {
+                FastFlowApp()
             }
         }
     }
@@ -24,42 +25,35 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun FastFlowApp() {
-    // This remembers the navigation state (which screen we are on)
     val navController = rememberNavController()
 
-    // NavHost is the container that switches between screens
+    // Shared state for completed fasting sessions
+    var lastCompletedDuration by remember { mutableStateOf(0L) }
+    var completedSessionCount by remember { mutableStateOf(0) }
+
     NavHost(
         navController = navController,
-        startDestination = "dashboard"     // First screen that appears
+        startDestination = "dashboard"
     ) {
-        // Dashboard screen
         composable("dashboard") {
             DashboardScreen(
-                onNavigateToHistory = {
-                    navController.navigate("history")   // Go to History screen
-                },
-                onNavigateToSettings = {
-                    navController.navigate("settings")  // Go to Settings screen
+                onNavigateToHistory = { navController.navigate("history") },
+                onNavigateToSettings = { navController.navigate("settings") },
+                onSessionCompleted = { duration ->
+                    lastCompletedDuration = duration
+                    completedSessionCount += 1
                 }
             )
         }
-
-        // History screen
         composable("history") {
             HistoryScreen(
-                onBack = {
-                    navController.popBackStack()   // Go back to previous screen
-                }
+                onBack = { navController.popBackStack() },
+                lastCompletedDuration = lastCompletedDuration,
+                completedSessionCount = completedSessionCount
             )
         }
-
-        // Settings screen
         composable("settings") {
-            SettingsScreen(
-                onBack = {
-                    navController.popBackStack()
-                }
-            )
+            SettingsScreen(onBack = { navController.popBackStack() })
         }
     }
 }
