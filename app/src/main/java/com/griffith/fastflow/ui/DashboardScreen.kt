@@ -1,10 +1,12 @@
 package com.griffith.fastflow.ui
 
+import android.content.Intent
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
@@ -22,6 +24,9 @@ fun DashboardScreen(
 
     // Stores how many seconds have passed since the fast started
     var elapsedSeconds by remember { mutableStateOf(0L) }
+
+    // Needed to launch the share intent
+    val context = LocalContext.current
 
     // Updates the timer every second while fasting is active
     LaunchedEffect(isFasting) {
@@ -67,21 +72,40 @@ fun DashboardScreen(
 
         Spacer(modifier = Modifier.height(40.dp))
 
+        // Start / Stop button
         Button(
             onClick = {
                 if (!isFasting) {
-                    // Start the fast
                     startTime = System.currentTimeMillis()
                     elapsedSeconds = 0L
                     isFasting = true
                 } else {
-                    // Stop the fast
                     elapsedSeconds = (System.currentTimeMillis() - startTime) / 1000
                     isFasting = false
                 }
             }
         ) {
             Text(if (isFasting) "Stop Fast" else "Start Fast")
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Share Progress button (Implicit Intent)
+        OutlinedButton(
+            onClick = {
+                val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(
+                        Intent.EXTRA_TEXT,
+                        "I've been fasting for $formattedTime using FastFlow!"
+                    )
+                }
+                context.startActivity(
+                    Intent.createChooser(shareIntent, "Share your progress")
+                )
+            }
+        ) {
+            Text("Share Progress")
         }
 
         Spacer(modifier = Modifier.height(24.dp))
