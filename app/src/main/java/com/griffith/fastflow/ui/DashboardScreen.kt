@@ -3,6 +3,9 @@ package com.griffith.fastflow.ui
 import android.content.Intent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -47,34 +50,82 @@ fun DashboardScreen(
     // Format as HH:MM:SS with leading zeros
     val formattedTime = String.format("%02d:%02d:%02d", hours, minutes, seconds)
 
+    // 16-hour fasting goal
+    val fastingGoalSeconds = 16 * 60 * 60L
+    val progress = (elapsedSeconds.toFloat() / fastingGoalSeconds).coerceIn(0f, 1f)
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
-            .padding(24.dp),
+            .windowInsetsPadding(WindowInsets.systemBars)
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 24.dp, vertical = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+        verticalArrangement = Arrangement.Top
     ) {
         Text(
             text = "FastFlow",
             style = MaterialTheme.typography.headlineLarge
         )
 
-        Spacer(modifier = Modifier.height(32.dp))
-
-        // Formatted timer display
         Text(
-            text = formattedTime,
-            fontSize = 48.sp
+            text = "Your fasting journey",
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
         )
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(24.dp))
 
-        Text(
-            text = if (isFasting) "Fasting in progress..." else "Ready to fast"
-        )
+        // Timer inside a circular progress indicator
+        Card(
+            modifier = Modifier.size(260.dp),
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface
+            )
+        ) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(
+                    progress = { progress },
+                    modifier = Modifier.size(220.dp),
+                    strokeWidth = 12.dp,
+                    color = MaterialTheme.colorScheme.primary,
+                    trackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                )
 
-        Spacer(modifier = Modifier.height(40.dp))
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = formattedTime,
+                        fontSize = 40.sp,
+                        style = MaterialTheme.typography.headlineMedium
+                    )
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    Text(
+                        text = "16h goal",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                    )
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    Text(
+                        text = if (isFasting) "Fasting in progress..." else "Ready to fast",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
 
         // Start / Stop button
         Button(
@@ -90,56 +141,73 @@ fun DashboardScreen(
                     onSessionCompleted(elapsedSeconds)   // Report the completed duration
                     isFasting = false
                 }
-            }
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp)
         ) {
             Text(if (isFasting) "Stop Fast" else "Start Fast")
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Share Progress button (Implicit Intent)
-        OutlinedButton(
-            onClick = {
-                val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                    type = "text/plain"
-                    putExtra(
-                        Intent.EXTRA_TEXT,
-                        "I've been fasting for $formattedTime using FastFlow!"
-                    )
-                }
-                context.startActivity(
-                    Intent.createChooser(shareIntent, "Share your progress")
-                )
-            }
+        // Share Progress and View Details side by side
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Text("Share Progress")
+            OutlinedButton(
+                onClick = {
+                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(
+                            Intent.EXTRA_TEXT,
+                            "I've been fasting for $formattedTime using FastFlow!"
+                        )
+                    }
+                    context.startActivity(
+                        Intent.createChooser(shareIntent, "Share your progress")
+                    )
+                },
+                modifier = Modifier.weight(1f)
+            ) {
+                Text("Share Progress")
+            }
+
+            OutlinedButton(
+                onClick = {
+                    val intent = Intent(context, SessionDetailActivity::class.java).apply {
+                        putExtra("formattedTime", formattedTime)
+                    }
+                    context.startActivity(intent)
+                },
+                modifier = Modifier.weight(1f)
+            ) {
+                Text("View Details")
+            }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // View Session Details button (Explicit Intent)
-        OutlinedButton(
-            onClick = {
-                val intent = Intent(context, SessionDetailActivity::class.java).apply {
-                    putExtra("formattedTime", formattedTime)
-                }
-                context.startActivity(intent)
-            }
-        ) {
-            Text("View Session Details")
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
+        // History and Settings side by side with equal widths
         Row(
+            modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            OutlinedButton(onClick = onNavigateToHistory) {
+            OutlinedButton(
+                onClick = onNavigateToHistory,
+                modifier = Modifier.weight(1f)
+            ) {
                 Text("History")
             }
-            OutlinedButton(onClick = onNavigateToSettings) {
+            OutlinedButton(
+                onClick = onNavigateToSettings,
+                modifier = Modifier.weight(1f)
+            ) {
                 Text("Settings")
             }
         }
+
+        Spacer(modifier = Modifier.height(16.dp))
     }
 }
